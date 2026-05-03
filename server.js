@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
+import authRoutes from "./routes/auth.js";
+import { requireAuth, requireTeacher } from "./middleware/auth.js";
 
 dotenv.config();
 
@@ -24,21 +26,24 @@ async function connectDB() {
 }
 connectDB();
 
-// GET all items
-app.get("/api/items", async (req, res) => {
+// AUTH ROUTES
+app.use("/auth", authRoutes);
+
+// GET all items (students + teachers)
+app.get("/api/items", requireAuth, async (req, res) => {
   const items = await db.collection("items").find().toArray();
   res.json(items);
 });
 
-// POST create item
-app.post("/api/items", async (req, res) => {
+// POST create item (teachers only)
+app.post("/api/items", requireTeacher, async (req, res) => {
   const result = await db.collection("items").insertOne(req.body);
   res.json(result);
 });
 
 // Root route
 app.get("/", (req, res) => {
-  res.send("Backend is running!");
+  res.send("Backend is running with authentication!");
 });
 
 // Start server
